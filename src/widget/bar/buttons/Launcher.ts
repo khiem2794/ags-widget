@@ -1,8 +1,11 @@
 import PanelButton from "../PanelButton"
 import options from "src/options"
 import nix from "src/service/nix"
-
 const { icon, label, action } = options.bar.launcher
+
+
+print('----------++++++++++++++++++++++++++++++=')
+print(icon.icon);
 
 function Spinner() {
     const child = Widget.Icon({

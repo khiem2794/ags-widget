@@ -15,11 +15,13 @@ import { forMonitors } from "src/lib/utils"
 import { setupQuickSettings } from "src/widget/quicksettings/QuickSettings"
 import { setupDateMenu } from "src/widget/datemenu/DateMenu"
 
+import TopBar from "./window/topbar/TopBar"
+
 App.config({
     onConfigParsed: () => {
         setupQuickSettings()
         setupDateMenu()
-        init()
+        // init()
     },
     closeWindowDelay: {
         "launcher": options.transition.value,
@@ -28,6 +30,7 @@ App.config({
         "datemenu": options.transition.value,
     },
     windows: () => [
+        ...forMonitors(TopBar),
         ...forMonitors(Bar),
         ...forMonitors(NotificationPopups),
         ...forMonitors(ScreenCorners),

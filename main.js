@@ -92,9 +92,9 @@ function mkOptions(cacheFile, object) {
     async reset() {
       return (await reset()).join("\n");
     },
-    handler(deps3, callback) {
+    handler(deps2, callback) {
       for (const opt2 of getOptions(object)) {
-        if (deps3.some((i) => opt2.id.startsWith(i)))
+        if (deps2.some((i) => opt2.id.startsWith(i)))
           opt2.connect("changed", callback);
       }
     }
@@ -639,269 +639,6 @@ Utils.monitorFile(`${App.configDir}/src/style`, resetCss);
 options_default.handler(deps, resetCss);
 await resetCss();
 
-// .config/ags/src/service/wallpaper.ts
-var WP = `${Utils.HOME}/.config/background`;
-var Cache = `${Utils.HOME}/Pictures/Wallpapers/Bing`;
-var Wallpaper = class extends Service {
-  static {
-    Service.register(this, {}, {
-      "wallpaper": ["string"]
-    });
-  }
-  #blockMonitor = false;
-  #wallpaper() {
-    if (!dependencies("swww"))
-      return;
-    sh("hyprctl cursorpos").then((pos2) => {
-      sh([
-        "swww",
-        "img",
-        "--invert-y",
-        "--transition-type",
-        "grow",
-        "--transition-pos",
-        pos2.replace(" ", ""),
-        WP
-      ]).then(() => {
-        this.changed("wallpaper");
-      });
-    });
-  }
-  async #setWallpaper(path) {
-    this.#blockMonitor = true;
-    await sh(`cp ${path} ${WP}`);
-    this.#wallpaper();
-    this.#blockMonitor = false;
-  }
-  async #fetchBing() {
-    const res = await Utils.fetch("https://bing.biturl.top/", {
-      params: {
-        resolution: options_default.wallpaper.resolution.value,
-        format: "json",
-        image_format: "jpg",
-        index: "random",
-        mkt: options_default.wallpaper.market.value
-      }
-    }).then((res2) => res2.text());
-    if (!res.startsWith("{"))
-      return console.warn("bing api", res);
-    const { url } = JSON.parse(res);
-    const file = `${Cache}/${url.replace("https://www.bing.com/th?id=", "")}`;
-    if (dependencies("curl")) {
-      Utils.ensureDirectory(Cache);
-      await sh(`curl "${url}" --output ${file}`);
-      this.#setWallpaper(file);
-    }
-  }
-  random = () => {
-    this.#fetchBing();
-  };
-  set = (path) => {
-    this.#setWallpaper(path);
-  };
-  get wallpaper() {
-    return WP;
-  }
-  constructor() {
-    super();
-    if (!dependencies("swww"))
-      return this;
-    Utils.monitorFile(WP, () => {
-      if (!this.#blockMonitor)
-        this.#wallpaper();
-    });
-    Utils.execAsync("swww-daemon").then(this.#wallpaper).catch(() => null);
-  }
-};
-var wallpaper_default = new Wallpaper();
-
-// .config/ags/src/lib/matugen.ts
-function init() {
-  wallpaper_default.connect("changed", () => matugen());
-  options_default.autotheme.connect("changed", () => matugen());
-}
-function animate(...setters) {
-  const delay = options_default.transition.value / 2;
-  setters.forEach((fn, i) => Utils.timeout(delay * i, fn));
-}
-async function matugen(type = "image", arg = wallpaper_default.wallpaper) {
-  if (!options_default.autotheme.value || !dependencies("matugen"))
-    return;
-  const colors = await sh(`matugen --dry-run -j hex ${type} ${arg}`);
-  const c = JSON.parse(colors).colors;
-  const { dark: dark3, light: light3 } = options_default.theme;
-  animate(
-    () => {
-      dark3.widget.value = c.dark.on_surface;
-      light3.widget.value = c.light.on_surface;
-    },
-    () => {
-      dark3.border.value = c.dark.outline;
-      light3.border.value = c.light.outline;
-    },
-    () => {
-      dark3.bg.value = c.dark.surface;
-      light3.bg.value = c.light.surface;
-    },
-    () => {
-      dark3.fg.value = c.dark.on_surface;
-      light3.fg.value = c.light.on_surface;
-    },
-    () => {
-      dark3.primary.bg.value = c.dark.primary;
-      light3.primary.bg.value = c.light.primary;
-      options_default.bar.battery.charging.value = options_default.theme.scheme.value === "dark" ? c.dark.primary : c.light.primary;
-    },
-    () => {
-      dark3.primary.fg.value = c.dark.on_primary;
-      light3.primary.fg.value = c.light.on_primary;
-    },
-    () => {
-      dark3.error.bg.value = c.dark.error;
-      light3.error.bg.value = c.light.error;
-    },
-    () => {
-      dark3.error.fg.value = c.dark.on_error;
-      light3.error.fg.value = c.light.on_error;
-    }
-  );
-}
-
-// .config/ags/src/lib/hyprland.ts
-var { messageAsync } = await Service.import("hyprland");
-var {
-  hyprland,
-  theme: {
-    spacing: spacing2,
-    radius: radius2,
-    border: { width },
-    blur: blur2,
-    shadows: shadows2,
-    dark: {
-      primary: { bg: darkActive }
-    },
-    light: {
-      primary: { bg: lightActive }
-    },
-    scheme: scheme2
-  }
-} = options_default;
-var deps2 = [
-  "hyprland",
-  spacing2.id,
-  radius2.id,
-  blur2.id,
-  width.id,
-  shadows2.id,
-  darkActive.id,
-  lightActive.id,
-  scheme2.id
-];
-function primary() {
-  return scheme2.value === "dark" ? darkActive.value : lightActive.value;
-}
-function rgba(color) {
-  return `rgba(${color}ff)`.replace("#", "");
-}
-function sendBatch(batch) {
-  const cmd = batch.filter((x) => !!x).map((x) => `keyword ${x}`).join("; ");
-  return messageAsync(`[[BATCH]]/${cmd}`);
-}
-async function setupHyprland() {
-  const wm_gaps = Math.floor(hyprland.gaps.value * spacing2.value);
-  sendBatch([
-    `general:border_size ${width}`,
-    `general:gaps_out ${wm_gaps}`,
-    `general:gaps_in ${Math.floor(wm_gaps / 2)}`,
-    `general:col.active_border ${rgba(primary())}`,
-    `general:col.inactive_border ${rgba(hyprland.inactiveBorder.value)}`,
-    `decoration:rounding ${radius2}`,
-    `decoration:drop_shadow ${shadows2.value ? "yes" : "no"}`,
-    `dwindle:no_gaps_when_only ${hyprland.gapsWhenOnly.value ? 0 : 1}`,
-    `master:no_gaps_when_only ${hyprland.gapsWhenOnly.value ? 0 : 1}`
-  ]);
-  await sendBatch(App.windows.map(({ name }) => `layerrule unset, ${name}`));
-  if (blur2.value > 0) {
-    sendBatch(App.windows.flatMap(({ name }) => [
-      `layerrule unset, ${name}`,
-      `layerrule blur, ${name}`,
-      `layerrule ignorealpha ${/* based on shadow color */
-      0.29}, ${name}`
-    ]));
-  }
-}
-function init2() {
-  options_default.handler(deps2, setupHyprland);
-  setupHyprland();
-}
-
-// .config/ags/src/lib/tmux.ts
-async function tmux() {
-  const { scheme: scheme5, dark: dark3, light: light3 } = options_default.theme;
-  const hex = scheme5.value === "dark" ? dark3.primary.bg.value : light3.primary.bg.value;
-  if (await sh("which tmux").catch(() => false))
-    sh(`tmux set @main_accent "${hex}"`);
-}
-function init3() {
-  options_default.theme.dark.primary.bg.connect("changed", tmux);
-  options_default.theme.light.primary.bg.connect("changed", tmux);
-}
-
-// .config/ags/src/lib/gtk.ts
-import Gio from "gi://Gio";
-var settings = new Gio.Settings({
-  schema: "org.gnome.desktop.interface"
-});
-function gtk() {
-  const scheme5 = options_default.theme.scheme.value;
-  settings.set_string("color-scheme", `prefer-${scheme5}`);
-}
-function init4() {
-  options_default.theme.scheme.connect("changed", gtk);
-  gtk();
-}
-
-// .config/ags/src/lib/battery.ts
-async function init5() {
-  const bat = await Service.import("battery");
-  bat.connect("notify::percent", ({ percent, charging }) => {
-    const low2 = 30;
-    if (percent !== low2 || percent !== low2 / 2 || !charging)
-      return;
-    Utils.notify({
-      summary: `${percent}% Battery Percentage`,
-      iconName: icons_default.battery.warning,
-      urgency: "critical"
-    });
-  });
-}
-
-// .config/ags/src/lib/notifications.ts
-var notifs = await Service.import("notifications");
-var { blacklist } = options_default.notifications;
-function init6() {
-  const notify = notifs.constructor.prototype.Notify.bind(notifs);
-  notifs.constructor.prototype.Notify = function(appName, ...rest) {
-    if (blacklist.value.includes(appName))
-      return Number.MAX_SAFE_INTEGER;
-    return notify(appName, ...rest);
-  };
-}
-
-// .config/ags/src/lib/init.ts
-function init7() {
-  try {
-    init4();
-    init3();
-    init();
-    init5();
-    init6();
-    init2();
-  } catch (error) {
-    logError(error);
-  }
-}
-
 // .config/ags/src/widget/bar/PanelButton.ts
 var PanelButton_default = ({
   window = "",
@@ -938,7 +675,7 @@ var PanelButton_default = ({
 
 // .config/ags/src/widget/bar/buttons/BatteryBar.ts
 var battery = await Service.import("battery");
-var { bar, percentage, blocks, width: width2, low } = options_default.bar.battery;
+var { bar, percentage, blocks, width, low } = options_default.bar.battery;
 var Indicator = () => Widget.Icon({
   setup: (self) => self.hook(battery, () => {
     self.icon = battery.charging || battery.charged ? icons_default.battery.charging : battery.icon_name;
@@ -961,9 +698,9 @@ var LevelBar = () => {
   });
   const update = () => {
     level.value = battery.percent / 100 * blocks.value;
-    level.css = `block { min-width: ${width2.value / blocks.value}pt; }`;
+    level.css = `block { min-width: ${width.value / blocks.value}pt; }`;
   };
-  return level.hook(width2, update).hook(blocks, update).hook(bar, () => {
+  return level.hook(width, update).hook(blocks, update).hook(bar, () => {
     level.vpack = bar.value === "whole" ? "fill" : "center";
     level.hpack = bar.value === "whole" ? "fill" : "center";
   });
@@ -1193,6 +930,8 @@ var nix_default = new Nix();
 
 // .config/ags/src/widget/bar/buttons/Launcher.ts
 var { icon: icon2, label, action: action2 } = options_default.bar.launcher;
+print("----------++++++++++++++++++++++++++++++=");
+print(icon2.icon);
 function Spinner() {
   const child = Widget.Icon({
     icon: icon2.icon.bind(),
@@ -1489,11 +1228,11 @@ var SystemIndicators_default = () => PanelButton_default({
 });
 
 // .config/ags/src/widget/bar/buttons/Taskbar.ts
-var hyprland2 = await Service.import("hyprland");
+var hyprland = await Service.import("hyprland");
 var apps = await Service.import("applications");
 var { monochrome: monochrome3, exclusive, iconSize } = options_default.bar.taskbar;
 var { position } = options_default.bar;
-var focus = (address) => hyprland2.messageAsync(
+var focus = (address) => hyprland.messageAsync(
   `dispatch focuswindow address:${address}`
 );
 var DummyItem = (address) => Widget.Box({
@@ -1501,7 +1240,7 @@ var DummyItem = (address) => Widget.Box({
   visible: false
 });
 var AppItem = (address) => {
-  const client = hyprland2.getClient(address);
+  const client = hyprland.getClient(address);
   if (!client || client.class === "")
     return DummyItem(address);
   const app = apps.list.find((app2) => app2.match(client.class));
@@ -1509,8 +1248,8 @@ var AppItem = (address) => {
     class_name: "panel-button",
     tooltip_text: Utils.watch(
       client.title,
-      hyprland2,
-      () => hyprland2.getClient(address)?.title || ""
+      hyprland,
+      () => hyprland.getClient(address)?.title || ""
     ),
     on_primary_click: () => focus(address),
     on_middle_click: () => app && launchApp(app),
@@ -1525,8 +1264,8 @@ var AppItem = (address) => {
   return Widget.Box(
     {
       attribute: { address },
-      visible: Utils.watch(true, [exclusive, hyprland2], () => {
-        return exclusive.value ? hyprland2.active.workspace.id === client.workspace.id : true;
+      visible: Utils.watch(true, [exclusive, hyprland], () => {
+        return exclusive.value ? hyprland.active.workspace.id === client.workspace.id : true;
       })
     },
     Widget.Overlay({
@@ -1536,8 +1275,8 @@ var AppItem = (address) => {
         className: "indicator",
         hpack: "center",
         vpack: position.bind().as((p) => p === "top" ? "start" : "end"),
-        setup: (w) => w.hook(hyprland2, () => {
-          w.toggleClassName("active", hyprland2.active.client.address === address);
+        setup: (w) => w.hook(hyprland, () => {
+          w.toggleClassName("active", hyprland.active.client.address === address);
         })
       })
     })
@@ -1545,28 +1284,28 @@ var AppItem = (address) => {
 };
 function sortItems(arr) {
   return arr.sort(({ attribute: a }, { attribute: b2 }) => {
-    const aclient = hyprland2.getClient(a.address);
-    const bclient = hyprland2.getClient(b2.address);
+    const aclient = hyprland.getClient(a.address);
+    const bclient = hyprland.getClient(b2.address);
     return aclient.workspace.id - bclient.workspace.id;
   });
 }
 var Taskbar_default = () => Widget.Box({
   class_name: "taskbar",
-  children: sortItems(hyprland2.clients.map((c) => AppItem(c.address))),
-  setup: (w) => w.hook(hyprland2, (w2, address) => {
+  children: sortItems(hyprland.clients.map((c) => AppItem(c.address))),
+  setup: (w) => w.hook(hyprland, (w2, address) => {
     if (typeof address === "string")
       w2.children = w2.children.filter((ch) => ch.attribute.address !== address);
-  }, "client-removed").hook(hyprland2, (w2, address) => {
+  }, "client-removed").hook(hyprland, (w2, address) => {
     if (typeof address === "string")
       w2.children = sortItems([...w2.children, AppItem(address)]);
-  }, "client-added").hook(hyprland2, (w2, event) => {
+  }, "client-added").hook(hyprland, (w2, event) => {
     if (event === "movewindow")
       w2.children = sortItems(w2.children);
   }, "event")
 });
 
 // .config/ags/src/widget/bar/buttons/Workspaces.ts
-var hyprland3 = await Service.import("hyprland");
+var hyprland2 = await Service.import("hyprland");
 var { workspaces } = options_default.bar.workspaces;
 var dispatch = (arg) => {
   sh(`hyprctl dispatch workspace ${arg}`);
@@ -1576,15 +1315,15 @@ var Workspaces = (ws) => Widget.Box({
     attribute: i,
     vpack: "center",
     label: `${i}`,
-    setup: (self) => self.hook(hyprland3, () => {
-      self.toggleClassName("active", hyprland3.active.workspace.id === i);
-      self.toggleClassName("occupied", (hyprland3.getWorkspace(i)?.windows || 0) > 0);
+    setup: (self) => self.hook(hyprland2, () => {
+      self.toggleClassName("active", hyprland2.active.workspace.id === i);
+      self.toggleClassName("occupied", (hyprland2.getWorkspace(i)?.windows || 0) > 0);
     })
   })),
   setup: (box) => {
     if (ws === 0) {
-      box.hook(hyprland3.active.workspace, () => box.children.map((btn) => {
-        btn.visible = hyprland3.workspaces.some((ws2) => ws2.id === btn.attribute);
+      box.hook(hyprland2.active.workspace, () => box.children.map((btn) => {
+        btn.visible = hyprland2.workspaces.some((ws2) => ws2.id === btn.attribute);
       }));
     }
   }
@@ -1701,12 +1440,12 @@ var ScreenRecord_default = () => PanelButton_default({
 
 // .config/ags/src/widget/bar/buttons/Messages.ts
 var n = await Service.import("notifications");
-var notifs2 = n.bind("notifications");
+var notifs = n.bind("notifications");
 var action4 = options_default.bar.messages.action.bind();
 var Messages_default = () => PanelButton_default({
   class_name: "messages",
   on_clicked: action4,
-  visible: notifs2.as((n3) => n3.length > 0),
+  visible: notifs.as((n3) => n3.length > 0),
   child: Widget.Box([
     Widget.Icon(icons_default.notifications.message)
   ])
@@ -2214,7 +1953,7 @@ function ShRun() {
 }
 
 // .config/ags/src/widget/launcher/Launcher.ts
-var { width: width3, margin } = options_default.launcher;
+var { width: width2, margin } = options_default.launcher;
 var isnix = nix_default.available;
 function Launcher2() {
   const favs = Favorites();
@@ -2297,7 +2036,7 @@ function Launcher2() {
     favs.reveal_child = true;
   }
   const layout4 = Widget.Box({
-    css: width3.bind().as((v) => `min-width: ${v}pt;`),
+    css: width2.bind().as((v) => `min-width: ${v}pt;`),
     class_name: "launcher",
     vertical: true,
     vpack: "start",
@@ -2538,7 +2277,7 @@ var NotificationPopups_default = (monitor) => Widget.Window({
 import GLib7 from "gi://GLib?version=2.0";
 var Progress_default = ({
   height = 18,
-  width: width4 = 180,
+  width: width3 = 180,
   vertical = false,
   child
 }) => {
@@ -2554,7 +2293,7 @@ var Progress_default = ({
     class_name: "progress",
     child: fill,
     css: `
-            min-width: ${width4}px;
+            min-width: ${width3}px;
             min-height: ${height}px;
         `
   });
@@ -2570,8 +2309,8 @@ var Progress_default = ({
         animations = [];
       }
       const axis = vertical ? "height" : "width";
-      const axisv = vertical ? height : width4;
-      const min = vertical ? width4 : height;
+      const axisv = vertical ? height : width3;
+      const min = vertical ? width3 : height;
       const preferred2 = (axisv - min) * value + min;
       if (!fill_size) {
         fill_size = preferred2;
@@ -2746,9 +2485,9 @@ import Gdk4 from "gi://Gdk";
 import Gtk from "gi://Gtk?version=3.0";
 var monochrome4 = options_default.overview.monochromeIcon;
 var TARGET = [Gtk.TargetEntry.new("text/plain", Gtk.TargetFlags.SAME_APP, 0)];
-var hyprland4 = await Service.import("hyprland");
+var hyprland3 = await Service.import("hyprland");
 var apps3 = await Service.import("applications");
-var dispatch2 = (args) => hyprland4.messageAsync(`dispatch ${args}`);
+var dispatch2 = (args) => hyprland3.messageAsync(`dispatch ${args}`);
 var Window_default = ({ address, size: [w, h2], class: c, title }) => Widget.Button({
   class_name: "client",
   attribute: { address },
@@ -2784,27 +2523,27 @@ import Gdk5 from "gi://Gdk";
 import Gtk2 from "gi://Gtk?version=3.0";
 var TARGET2 = [Gtk2.TargetEntry.new("text/plain", Gtk2.TargetFlags.SAME_APP, 0)];
 var scale = (size3) => options_default.overview.scale.value / 100 * size3;
-var hyprland5 = await Service.import("hyprland");
-var dispatch3 = (args) => hyprland5.messageAsync(`dispatch ${args}`);
+var hyprland4 = await Service.import("hyprland");
+var dispatch3 = (args) => hyprland4.messageAsync(`dispatch ${args}`);
 var size = (id) => {
   const def = { h: 1080, w: 1920 };
-  const ws = hyprland5.getWorkspace(id);
+  const ws = hyprland4.getWorkspace(id);
   if (!ws)
     return def;
-  const mon = hyprland5.getMonitor(ws.monitorID);
+  const mon = hyprland4.getMonitor(ws.monitorID);
   return mon ? { h: mon.height, w: mon.width } : def;
 };
 var Workspace_default = (id) => {
   const fixed = Widget.Fixed();
   async function update() {
-    const json = await hyprland5.messageAsync("j/clients").catch(() => null);
+    const json = await hyprland4.messageAsync("j/clients").catch(() => null);
     if (!json)
       return;
     fixed.get_children().forEach((ch) => ch.destroy());
     const clients = JSON.parse(json);
     clients.filter(({ workspace }) => workspace.id === id).forEach((c) => {
-      const x = c.at[0] - (hyprland5.getMonitor(c.monitor)?.x || 0);
-      const y = c.at[1] - (hyprland5.getMonitor(c.monitor)?.y || 0);
+      const x = c.at[0] - (hyprland4.getMonitor(c.monitor)?.x || 0);
+      const y = c.at[1] - (hyprland4.getMonitor(c.monitor)?.y || 0);
       c.mapped && fixed.put(Window_default(c), scale(x), scale(y));
     });
     fixed.show_all();
@@ -2820,10 +2559,10 @@ var Workspace_default = (id) => {
         `),
     setup(box) {
       box.hook(options_default.overview.scale, update);
-      box.hook(hyprland5, update, "notify::clients");
-      box.hook(hyprland5.active.client, update);
-      box.hook(hyprland5.active.workspace, () => {
-        box.toggleClassName("active", hyprland5.active.workspace.id === id);
+      box.hook(hyprland4, update, "notify::clients");
+      box.hook(hyprland4.active.client, update);
+      box.hook(hyprland4.active.workspace, () => {
+        box.toggleClassName("active", hyprland4.active.workspace.id === id);
       });
     },
     child: Widget.EventBox({
@@ -2845,19 +2584,19 @@ var Workspace_default = (id) => {
 };
 
 // .config/ags/src/widget/overview/Overview.ts
-var hyprland6 = await Service.import("hyprland");
+var hyprland5 = await Service.import("hyprland");
 var Overview = (ws) => Widget.Box({
   class_name: "overview horizontal",
-  children: ws > 0 ? range(ws).map(Workspace_default) : hyprland6.workspaces.map(({ id }) => Workspace_default(id)).sort((a, b2) => a.attribute.id - b2.attribute.id),
+  children: ws > 0 ? range(ws).map(Workspace_default) : hyprland5.workspaces.map(({ id }) => Workspace_default(id)).sort((a, b2) => a.attribute.id - b2.attribute.id),
   setup: (w) => {
     if (ws > 0)
       return;
-    w.hook(hyprland6, (w2, id) => {
+    w.hook(hyprland5, (w2, id) => {
       if (id === void 0)
         return;
       w2.children = w2.children.filter((ch) => ch.attribute.id !== Number(id));
     }, "workspace-removed");
-    w.hook(hyprland6, (w2, id) => {
+    w.hook(hyprland5, (w2, id) => {
       if (id === void 0)
         return;
       w2.children = [...w2.children, Workspace_default(Number(id))].sort((a, b2) => a.attribute.id - b2.attribute.id);
@@ -3060,9 +2799,9 @@ function Setter({
       });
     case "color":
       return Widget.ColorButton().hook(opt2, (self) => {
-        const rgba2 = new Gdk6.RGBA();
-        rgba2.parse(opt2.value);
-        self.rgba = rgba2;
+        const rgba = new Gdk6.RGBA();
+        rgba.parse(opt2.value);
+        self.rgba = rgba;
       }).on("color-set", ({ rgba: { red, green, blue } }) => {
         const hex = (n3) => {
           const c = Math.floor(255 * n3).toString(16);
@@ -3158,6 +2897,82 @@ var Page_default = (name, icon4, ...groups) => Widget.Box({
   })
 });
 
+// .config/ags/src/service/wallpaper.ts
+var WP = `${Utils.HOME}/.config/background`;
+var Cache = `${Utils.HOME}/Pictures/Wallpapers/Bing`;
+var Wallpaper = class extends Service {
+  static {
+    Service.register(this, {}, {
+      "wallpaper": ["string"]
+    });
+  }
+  #blockMonitor = false;
+  #wallpaper() {
+    if (!dependencies("swww"))
+      return;
+    sh("hyprctl cursorpos").then((pos2) => {
+      sh([
+        "swww",
+        "img",
+        "--invert-y",
+        "--transition-type",
+        "grow",
+        "--transition-pos",
+        pos2.replace(" ", ""),
+        WP
+      ]).then(() => {
+        this.changed("wallpaper");
+      });
+    });
+  }
+  async #setWallpaper(path) {
+    this.#blockMonitor = true;
+    await sh(`cp ${path} ${WP}`);
+    this.#wallpaper();
+    this.#blockMonitor = false;
+  }
+  async #fetchBing() {
+    const res = await Utils.fetch("https://bing.biturl.top/", {
+      params: {
+        resolution: options_default.wallpaper.resolution.value,
+        format: "json",
+        image_format: "jpg",
+        index: "random",
+        mkt: options_default.wallpaper.market.value
+      }
+    }).then((res2) => res2.text());
+    if (!res.startsWith("{"))
+      return console.warn("bing api", res);
+    const { url } = JSON.parse(res);
+    const file = `${Cache}/${url.replace("https://www.bing.com/th?id=", "")}`;
+    if (dependencies("curl")) {
+      Utils.ensureDirectory(Cache);
+      await sh(`curl "${url}" --output ${file}`);
+      this.#setWallpaper(file);
+    }
+  }
+  random = () => {
+    this.#fetchBing();
+  };
+  set = (path) => {
+    this.#setWallpaper(path);
+  };
+  get wallpaper() {
+    return WP;
+  }
+  constructor() {
+    super();
+    if (!dependencies("swww"))
+      return this;
+    Utils.monitorFile(WP, () => {
+      if (!this.#blockMonitor)
+        this.#wallpaper();
+    });
+    Utils.execAsync("swww-daemon").then(this.#wallpaper).catch(() => null);
+  }
+};
+var wallpaper_default = new Wallpaper();
+
 // .config/ags/src/widget/settings/Wallpaper.ts
 var Wallpaper_default = () => Widget.Box(
   { class_name: "row wallpaper" },
@@ -3205,12 +3020,12 @@ var {
 var {
   dark: dark2,
   light: light2,
-  blur: blur3,
-  scheme: scheme3,
+  blur: blur2,
+  scheme: scheme2,
   padding: padding2,
-  spacing: spacing3,
-  radius: radius3,
-  shadows: shadows3,
+  spacing: spacing2,
+  radius: radius2,
+  shadows: shadows2,
   widget: widget3,
   border: border2
 } = theme;
@@ -3222,7 +3037,7 @@ var layout_default = [
       "",
       Wallpaper_default(),
       Row_default({ opt: at, title: "Auto Generate Color Scheme" }),
-      Row_default({ opt: scheme3, title: "Color Scheme", type: "enum", enums: ["dark", "light"] })
+      Row_default({ opt: scheme2, title: "Color Scheme", type: "enum", enums: ["dark", "light"] })
     ),
     Group_default(
       "Dark Colors",
@@ -3248,17 +3063,17 @@ var layout_default = [
     ),
     Group_default(
       "Theme",
-      Row_default({ opt: shadows3, title: "Shadows" }),
+      Row_default({ opt: shadows2, title: "Shadows" }),
       Row_default({ opt: widget3.opacity, title: "Widget Opacity", max: 100 }),
       Row_default({ opt: border2.opacity, title: "Border Opacity", max: 100 }),
       Row_default({ opt: border2.width, title: "Border Width" }),
-      Row_default({ opt: blur3, title: "Blur", note: "0 to disable", max: 70 })
+      Row_default({ opt: blur2, title: "Blur", note: "0 to disable", max: 70 })
     ),
     Group_default(
       "UI",
       Row_default({ opt: padding2, title: "Padding" }),
-      Row_default({ opt: spacing3, title: "Spacing" }),
-      Row_default({ opt: radius3, title: "Roundness" }),
+      Row_default({ opt: spacing2, title: "Spacing" }),
+      Row_default({ opt: radius2, title: "Roundness" }),
       Row_default({ opt: font.size, title: "Font Size" }),
       Row_default({ opt: font.name, title: "Font Name", type: "font" })
     )
@@ -3996,12 +3811,12 @@ var DND = () => SimpleToggleButton({
 });
 
 // .config/ags/src/widget/quicksettings/widgets/DarkMode.ts
-var { scheme: scheme4 } = options_default.theme;
+var { scheme: scheme3 } = options_default.theme;
 var DarkModeToggle = () => SimpleToggleButton({
-  icon: scheme4.bind().as((s) => icons_default.color[s]),
-  label: scheme4.bind().as((s) => s === "dark" ? "Dark" : "Light"),
-  toggle: () => scheme4.value = scheme4.value === "dark" ? "light" : "dark",
-  connection: [scheme4, () => scheme4.value === "dark"]
+  icon: scheme3.bind().as((s) => icons_default.color[s]),
+  label: scheme3.bind().as((s) => s === "dark" ? "Dark" : "Light"),
+  toggle: () => scheme3.value = scheme3.value === "dark" ? "light" : "dark",
+  connection: [scheme3, () => scheme3.value === "dark"]
 });
 
 // .config/ags/src/widget/quicksettings/widgets/MicMute.ts
@@ -4222,7 +4037,7 @@ function setupQuickSettings() {
 
 // .config/ags/src/widget/datemenu/NotificationColumn.ts
 var notifications3 = await Service.import("notifications");
-var notifs3 = notifications3.bind("notifications");
+var notifs2 = notifications3.bind("notifications");
 var Animated2 = (n3) => Widget.Revealer({
   transition_duration: options_default.transition.value,
   transition: "slide_down",
@@ -4234,12 +4049,12 @@ var Animated2 = (n3) => Widget.Revealer({
 });
 var ClearButton = () => Widget.Button({
   on_clicked: notifications3.clear,
-  sensitive: notifs3.as((n3) => n3.length > 0),
+  sensitive: notifs2.as((n3) => n3.length > 0),
   child: Widget.Box({
     children: [
       Widget.Label("Clear "),
       Widget.Icon({
-        icon: notifs3.as((n3) => icons_default.trash[n3.length > 0 ? "full" : "empty"])
+        icon: notifs2.as((n3) => icons_default.trash[n3.length > 0 ? "full" : "empty"])
       })
     ]
   })
@@ -4260,7 +4075,7 @@ var NotificationList = () => {
       map.set(n3.id, w);
       return w;
     }),
-    visible: notifs3.as((n3) => n3.length > 0)
+    visible: notifs2.as((n3) => n3.length > 0)
   });
   function remove(_, id) {
     const n3 = map.get(id);
@@ -4290,7 +4105,7 @@ var Placeholder = () => Widget.Box({
   hpack: "center",
   vexpand: true,
   hexpand: true,
-  visible: notifs3.as((n3) => n3.length === 0),
+  visible: notifs2.as((n3) => n3.length === 0),
   children: [
     Widget.Icon(icons_default.notifications.silent),
     Widget.Label("Your inbox is empty")
@@ -4385,12 +4200,140 @@ function setupDateMenu() {
   });
 }
 
+// .config/ags/src/window/topbar/widget/Arch.ts
+var Arch_default = () => {
+  return Widget.Button({
+    css: "color: red;",
+    child: Widget.Icon("archlinux-logo"),
+    on_clicked: (self) => {
+      print("secondary click");
+    }
+  });
+};
+
+// .config/ags/src/window/topbar/widget/Workspaces.ts
+var hyprland6 = await Service.import("hyprland");
+function ClientTitle() {
+  return Widget.Label({
+    class_name: "client-title",
+    label: hyprland6.active.client.bind("title").as((t2) => `${t2} `)
+  });
+}
+var Workspaces_default2 = () => {
+  const activeId = hyprland6.active.workspace.bind("id");
+  const workspaces2 = hyprland6.bind("workspaces").as((ws) => ws.map(({ id }) => Widget.Button({
+    css: "border-radius: 0;",
+    on_clicked: () => hyprland6.messageAsync(`dispatch workspace ${id}`),
+    child: Widget.Label(`${id}`),
+    class_name: activeId.as((i) => `${i === id ? "focused" : ""}`)
+  })));
+  const workspaceWidget = Widget.Box({
+    css: "padding: 0 6px;",
+    class_name: "workspaces",
+    children: workspaces2
+  });
+  return Widget.Box({
+    css: "background-color: green; border-radius: 10px;",
+    children: [
+      workspaceWidget,
+      ClientTitle()
+    ]
+  });
+};
+
+// .config/ags/src/window/topbar/widget/Date.ts
+var date = Variable("", {
+  poll: [1e3, 'date "+%H:%M, %e %B %Y"']
+});
+var Date_default2 = () => {
+  return Widget.Button({
+    class_name: "clock",
+    label: date.bind()
+  });
+};
+
+// .config/ags/src/window/topbar/widget/Warp.ts
+var Warp_default = () => {
+  return Widget.Button({
+    label: "Warp: \u{F015F}",
+    on_clicked: (self) => {
+      print("secondary click");
+    }
+  });
+};
+
+// .config/ags/src/window/topbar/widget/VolumeGroup.ts
+var audio4 = await Service.import("audio");
+var VolumeGroup_default = () => {
+  const icons = {
+    101: "overamplified",
+    67: "high",
+    34: "medium",
+    1: "low",
+    0: "muted"
+  };
+  function getIcon() {
+    const icon5 = audio4.speaker.is_muted ? 0 : [101, 67, 34, 1, 0].find(
+      (threshold) => threshold <= audio4.speaker.volume * 100
+    );
+    return `audio-volume-${icons[icon5]}-symbolic`;
+  }
+  const icon4 = Widget.Icon({
+    icon: Utils.watch(getIcon(), audio4.speaker, getIcon)
+  });
+  const slider = Widget.Slider({
+    hexpand: true,
+    draw_value: false,
+    on_change: ({ value }) => audio4.speaker.volume = value,
+    setup: (self) => self.hook(audio4.speaker, () => {
+      self.value = audio4.speaker.volume || 0;
+    })
+  });
+  const indicatior = Widget.Label({
+    label: `${audio4.speaker.volume}`,
+    setup: (self) => self.hook(audio4.speaker, () => {
+      self.value = audio4.speaker.volume || 0;
+    })
+  });
+  return Widget.Box({
+    // class_name: "volume",
+    css: "min-width: 180px",
+    children: [icon4, indicatior]
+  });
+};
+
+// .config/ags/src/window/topbar/TopBar.ts
+var TopBar_default = (monitor) => Widget.Window({
+  monitor,
+  class_name: "transparent",
+  name: `topbar${monitor}`,
+  exclusivity: "exclusive",
+  anchor: ["top", "left", "right"],
+  child: Widget.CenterBox({
+    css: "min-width: 2px; min-height: 2px;",
+    start_widget: Widget.Box({
+      spacing: 6,
+      children: [
+        Arch_default(),
+        Workspaces_default2()
+      ]
+    }),
+    center_widget: Widget.Box({
+      children: [Date_default2()]
+    }),
+    end_widget: Widget.Box({
+      spacing: 6,
+      hpack: "end",
+      children: [Warp_default(), VolumeGroup_default()]
+    })
+  })
+});
+
 // .config/ags/src/main.ts
 App.config({
   onConfigParsed: () => {
     setupQuickSettings();
     setupDateMenu();
-    init7();
   },
   closeWindowDelay: {
     "launcher": options_default.transition.value,
@@ -4399,6 +4342,7 @@ App.config({
     "datemenu": options_default.transition.value
   },
   windows: () => [
+    ...forMonitors(TopBar_default),
     ...forMonitors(Bar_default),
     ...forMonitors(NotificationPopups_default),
     ...forMonitors(ScreenCorners_default),
