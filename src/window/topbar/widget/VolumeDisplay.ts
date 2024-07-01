@@ -16,29 +16,24 @@ export default () => {
         return `audio-volume-${icons[icon]}-symbolic`
     }
 
-    const icon = Widget.Icon({
+    const displayIcon = Widget.Icon({
         icon: Utils.watch(getIcon(), audio.speaker, getIcon),
     })
 
-    const slider = Widget.Slider({
-        hexpand: true,
-        draw_value: false,
-        on_change: ({ value }) => audio.speaker.volume = value,
+    const valueLabel = Widget.Label({
         setup: self => self.hook(audio.speaker, () => {
-            self.value = audio.speaker.volume || 0
+            self.label = (audio.speaker.volume || 0)
         }),
+        label: audio.speaker.bind("volume").as(vol => ` ${Math.floor(vol * 100)}`),
     })
 
-    const indicatior = Widget.Label({
-        label: `${audio.speaker.volume}`,
-        setup: self => self.hook(audio.speaker, () => {
-            self.value = audio.speaker.volume || 0
-        }),
-    });
-
-    return Widget.Box({
-        // class_name: "volume",
-        css: "min-width: 180px",
-        children: [icon, indicatior],
+    return Widget.Button({
+        class_name: "volume",
+        child: Widget.Box({
+            children: [displayIcon, valueLabel],
+        })
     })
 }
+
+
+

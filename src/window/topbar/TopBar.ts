@@ -1,9 +1,11 @@
-import Arch from "./widget/Arch"
 import options from "src/options"
-import Workspaces from "./widget/Workspaces"
-import Date from "./widget/Date"
-import Warp from "./widget/Warp"
-import VolumeGroup from "./widget/VolumeGroup"
+import LogoDisplay from "./widget/LogoDisplay"
+import WorkspaceDisplay from "./widget/WorkspaceDisplay"
+import DateTimeDisplay from "./widget/DateTimeDisplay"
+import WarpDisplay from "./widget/WarpDisplay"
+import VolumeDisplay from "./widget/VolumeDisplay"
+import CpuUsageDisplay from "./widget/CpuUsageDisplay"
+import RamUsageDisplay from "./widget/RamUsageDisplay"
 
 export default (monitor: number) => Widget.Window({
     monitor,
@@ -16,17 +18,22 @@ export default (monitor: number) => Widget.Window({
         start_widget: Widget.Box({
             spacing: 6,
             children: [
-                Arch(),
-                Workspaces(),
+                LogoDisplay(),
+                WorkspaceDisplay(),
             ],
         }),
         center_widget: Widget.Box({
-            children: [ Date() ],
+            children: [ DateTimeDisplay() ],
         }),
         end_widget: Widget.Box({
             spacing: 6,
             hpack: "end",
-            children: [ Warp(), VolumeGroup() ],
+            children: [ 
+                WarpDisplay(), 
+                VolumeDisplay(),
+                CpuUsageDisplay(),
+                RamUsageDisplay(),
+            ],
         }),
     }),
 })

@@ -19,8 +19,8 @@ import TopBar from "./window/topbar/TopBar"
 
 App.config({
     onConfigParsed: () => {
-        setupQuickSettings()
-        setupDateMenu()
+        // setupQuickSettzings()
+        // setupDateMenu()
         // init()
     },
     closeWindowDelay: {
@@ -31,14 +31,14 @@ App.config({
     },
     windows: () => [
         ...forMonitors(TopBar),
-        ...forMonitors(Bar),
-        ...forMonitors(NotificationPopups),
-        ...forMonitors(ScreenCorners),
-        ...forMonitors(OSD),
-        Launcher(),
-        Overview(),
-        PowerMenu(),
-        SettingsDialog(),
-        Verification(),
+        // ...forMonitors(Bar),
+        // ...forMonitors(NotificationPopups),
+        // ...forMonitors(ScreenCorners),
+        // ...forMonitors(OSD),
+        // Launcher(),
+        // Overview(),
+        // PowerMenu(),
+        // SettingsDialog(),
+        // Verification(),
     ],
 })
