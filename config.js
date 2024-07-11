@@ -1,11 +1,16 @@
 import GLib from "gi://GLib"
 import Gdk from "gi://Gdk"
 
+const scss = `${App.configDir}/src/style/style.scss`;
+const css = `${App.configDir}/style.css`;
 const main = `${App.configDir}/main.js`
 const entry = `${App.configDir}/src/main.ts`
 const bundler = "bun"
 
 try {
+
+    await Utils.execAsync(`sass ${scss} ${css}`);
+
     switch (bundler) {
         case "bun":
             await Utils.execAsync([
@@ -33,9 +38,10 @@ try {
     }
 
     await import(`file://${main}`)
-
+    App.applyCss(css)
 } catch (error) {
     App.config({
+        style: css,
         windows: [
             Widget.Window({
                 name: 'CompError',
