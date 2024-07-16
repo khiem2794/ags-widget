@@ -9,12 +9,11 @@ import RamUsageDisplay from "./widget/RamUsageDisplay"
 
 export default (monitor: number) => Widget.Window({
     monitor,
-    class_name: "transparent",
+    class_name: "bg-tan color-accent",
     name: `topbar${monitor}`,
     exclusivity: "exclusive",
-    anchor: [ "top", "left", "right"],
+    anchor: ["top", "left", "right"],
     child: Widget.CenterBox({
-        css: "min-width: 2px; min-height: 2px;",
         start_widget: Widget.Box({
             spacing: 6,
             children: [
@@ -23,13 +22,13 @@ export default (monitor: number) => Widget.Window({
             ],
         }),
         center_widget: Widget.Box({
-            children: [ DateTimeDisplay() ],
+            children: [DateTimeDisplay()],
         }),
         end_widget: Widget.Box({
             spacing: 6,
             hpack: "end",
-            children: [ 
-                WarpDisplay(), 
+            children: [
+                WarpDisplay(),
                 VolumeDisplay(),
                 CpuUsageDisplay(),
                 RamUsageDisplay(),

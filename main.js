@@ -23,7 +23,6 @@ var LogoDisplay_default = () => {
 // .config/ags/src/window/topbar/widget/WorkspaceDisplay.ts
 var ClientTitle = function() {
   return Widget.Label({
-    class_name: "client-title",
     label: hyprland.active.client.bind("title").as((t) => `${t} `)
   });
 };
@@ -31,18 +30,19 @@ var hyprland = await Service.import("hyprland");
 var WorkspaceDisplay_default = () => {
   const activeId = hyprland.active.workspace.bind("id");
   const workspaces = hyprland.bind("workspaces").as((ws) => ws.map(({ id }) => Widget.Button({
-    css: "border-radius: 0;",
-    on_clicked: () => hyprland.messageAsync(`dispatch workspace ${id}`),
     child: Widget.Label(`${id}`),
-    class_name: activeId.as((i) => `${i === id ? "focused" : ""}`)
+    on_clicked: () => hyprland.messageAsync(`dispatch workspace ${id}`),
+    on_hover: (e) => {
+      print(`hover ${id}`);
+      e.get_button().set_label(`Switch to workspace ${id}`);
+    }
   })));
   const workspaceWidget = Widget.Box({
-    css: "padding: 0 6px;",
-    class_name: "workspaces",
+    class_name: "bg-brown",
     children: workspaces
   });
   return Widget.Box({
-    css: "background-color: green; border-radius: 10px;",
+    class_name: "",
     children: [
       workspaceWidget,
       ClientTitle()
@@ -141,12 +141,11 @@ var RamUsageDisplay_default = () => {
 // .config/ags/src/window/topbar/TopBar.ts
 var TopBar_default = (monitor) => Widget.Window({
   monitor,
-  class_name: "transparent",
+  class_name: "bg-tan color-accent",
   name: `topbar${monitor}`,
   exclusivity: "exclusive",
   anchor: ["top", "left", "right"],
   child: Widget.CenterBox({
-    css: "min-width: 2px; min-height: 2px;",
     start_widget: Widget.Box({
       spacing: 6,
       children: [

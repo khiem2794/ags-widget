@@ -1,12 +1,10 @@
 @import './base/color-dark.scss';
+@import './utility.scss';
 
 * {
     all: unset;
 }
 
 * {
-    // font-family: FOT-Rodin Pro M, Roboto, sans-serif;
     font-family: 'Maple Mono', sans-serif;
-    background-color: $brown;
-    color: $accent;
 }
