@@ -9,7 +9,7 @@ import RamUsageDisplay from "./widget/RamUsageDisplay"
 
 export default (monitor: number) => Widget.Window({
     monitor,
-    class_name: "bg-tan color-accent",
+    class_name: "bg-brown color-highlight",
     name: `topbar${monitor}`,
     exclusivity: "exclusive",
     anchor: ["top", "left", "right"],

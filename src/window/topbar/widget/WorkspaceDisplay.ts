@@ -10,10 +10,12 @@ function ClientTitle() {
 
 export default () => {
     const activeId = hyprland.active.workspace.bind("id")
+    const default_class = 'p-5px ';
     const workspaces = hyprland.bind("workspaces")
         .as(ws => ws.map(({ id }) => Widget.Button({
             child: Widget.Label(`${id}`),
             on_clicked: () => hyprland.messageAsync(`dispatch workspace ${id}`),
+            class_name: activeId.as(i => default_class + `${i === id ? "bg-highlight color-brown" : "bg-brown color-highlight"}`),
             on_hover: (e: Gdk.Event) => {
                 print(`hover ${id}`)
                 let r = e.get_button().at(0);
@@ -26,7 +28,7 @@ export default () => {
     })
 
     return Widget.Box({
-        class_name: "",
+        class_name: "ml-5px",
         children: [
             workspaceWidget,
             ClientTitle(),

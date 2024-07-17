@@ -1,5 +1,6 @@
 $percentages: 5, 10, 25, 50, 75, 100;
 $decimals: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9;
+$px_list: 0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000;
 
 // @each $percent in $percentages {
 //   .min-w-#{$percent} {
@@ -11,4 +12,59 @@ $decimals: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9;
   .opacity-#{$d} {
     opacity: #{'0.'}+$d;
   }
+}
+
+@each $n in $px_list {
+  .min-w-#{$n}px {
+    min-width: #{$n}px;
+  }
+
+  .min-h-#{$n}px {
+    min-height: #{$n}px;
+  }
+
+  .p-#{$n}px {
+    padding: #{$n}px;
+  }
+
+  .pt-#{$n}px {
+    padding-top: #{$n}px;
+  }
+
+  .pb-#{$n}px {
+    padding-bottom: #{$n}px;
+  }
+
+  .pl-#{$n}px {
+    padding-left: #{$n}px;
+  }
+
+  .pr-#{$n}px {
+    padding-right: #{$n}px;
+  }
+
+  .m-#{$n}px {
+    margin: #{$n}px;
+  }
+
+  .mt-#{$n}px {
+    margin-top: #{$n}px;
+  }
+
+  .mb-#{$n}px {
+    margin-bottom: #{$n}px;
+  }
+
+  .ml-#{$n}px {
+    margin-left: #{$n}px;
+  }
+
+  .mr-#{$n}px {
+    margin-right: #{$n}px;
+  }
+
+  .fs-#{$n}px {
+    font-size: #{$n}px;
+  }
+
 }
