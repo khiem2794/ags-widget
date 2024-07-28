@@ -1,21 +1,23 @@
 import options from "src/options"
-import LogoDisplay from "./widget/LogoDisplay"
-import WorkspaceDisplay from "./widget/WorkspaceDisplay"
-import DateTimeDisplay from "./widget/DateTimeDisplay"
-import WarpDisplay from "./widget/WarpDisplay"
-import VolumeDisplay from "./widget/VolumeDisplay"
-import CpuUsageDisplay from "./widget/CpuUsageDisplay"
-import RamUsageDisplay from "./widget/RamUsageDisplay"
+import LogoDisplay from "./widget/Logo"
+import WorkspaceDisplay from "./widget/Workspace"
+import DateTimeDisplay from "./widget/DateTime"
+import VolumeDisplay from "./widget/Volume"
+import CpuUsageDisplay from "./widget/CpuUsage"
+import RamUsageDisplay from "./widget/MemoryUsage"
+import BatteryUsageDisplay from "./widget/BatteryUsage"
+import BacklightDisplay from "./widget/Backlight"
+import SystemTrayDisplay from "./widget/SystemTray"
 
 export default (monitor: number) => Widget.Window({
     monitor,
-    class_name: "bg-brown color-highlight",
+    class_name: "bg-brown color-highlight p-0px",
     name: `topbar${monitor}`,
     exclusivity: "exclusive",
     anchor: ["top", "left", "right"],
     child: Widget.CenterBox({
         start_widget: Widget.Box({
-            spacing: 6,
+            spacing: 0,
             children: [
                 LogoDisplay(),
                 WorkspaceDisplay(),
@@ -25,13 +27,15 @@ export default (monitor: number) => Widget.Window({
             children: [DateTimeDisplay()],
         }),
         end_widget: Widget.Box({
-            spacing: 6,
+            spacing: 15,
             hpack: "end",
             children: [
-                WarpDisplay(),
+                BacklightDisplay(),
                 VolumeDisplay(),
+                BatteryUsageDisplay(),
                 CpuUsageDisplay(),
                 RamUsageDisplay(),
+                SystemTrayDisplay(),
             ],
         }),
     }),

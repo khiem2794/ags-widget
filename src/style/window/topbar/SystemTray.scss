@@ -1,0 +1,29 @@
+.systray button:not(:first-child) {
+    margin-left: 0.75rem;
+}
+
+.systray-menu {
+    background: blue;
+}
+
+.systray-menu label {
+    font-weight: bold;
+    color: white;
+}
+
+.systray-menu separator {
+    background-color: red;
+}
+
+.systray-menu check:not(:checked) {
+    background-color: blue;
+    border: 1px solid blue;
+}
+
+.systray-menu check:checked {
+    background-color: blue;
+}
+
+.systray-icon {
+    font-size: 1.3em;
+}

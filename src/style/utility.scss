@@ -8,6 +8,10 @@ $px_list: 0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 
 //   }
 // }
 
+.border-0 {
+  border-radius: 0;
+}
+
 @each $d in $decimals {
   .opacity-#{$d} {
     opacity: #{'0.'}+$d;
@@ -25,6 +29,16 @@ $px_list: 0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 
 
   .p-#{$n}px {
     padding: #{$n}px;
+  }
+
+  .px-#{$n}px {
+    padding-left: #{$n}px;
+    padding-right: #{$n}px;
+  }
+
+  .py-#{$n}px {
+    padding-top: #{$n}px;
+    padding-bottom: #{$n}px;
   }
 
   .pt-#{$n}px {
@@ -61,6 +75,16 @@ $px_list: 0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 
 
   .mr-#{$n}px {
     margin-right: #{$n}px;
+  }
+
+  .mx-#{$n}px {
+    margin-left: #{$n}px;
+    margin-right: #{$n}px;
+  }
+
+  .my-#{$n}px {
+    margin-top: #{$n}px;
+    margin-bottom: #{$n}px;
   }
 
   .fs-#{$n}px {

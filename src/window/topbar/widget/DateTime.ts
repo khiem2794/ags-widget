@@ -4,7 +4,7 @@ const date = Variable("", {
 
 export default () => {
     return Widget.Button({
-        class_name: "clock",
+        class_name: "text-highlight",
         label: date.bind(),
     })
 }

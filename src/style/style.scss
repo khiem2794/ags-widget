@@ -5,7 +5,13 @@
     all: unset;
 }
 
-* {
-    font-family: 'Maple Mono', sans-serif;
-    font-size: 1.25rem;
-}
+// * {
+//     font-family: 'Maple Mono', sans-serif;
+//     font-size: 1.25rem;
+//     border: 0;
+//     border-radius: 0;
+//     padding: 0;
+//     margin: 0;
+// }
+
+@import './window/topbar/SystemTray.scss';

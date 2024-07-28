@@ -1,9 +1,10 @@
-$tan: rgb(87, 84, 74);
-$brown: rgb(218, 212, 187);
-$highlight: rgb(65, 61, 52);
-$darkBrown: rgb(179, 172, 146);
-$accent: #cd664d;
-$accent2: #a0c490;
+$tan: #57544A;
+$brown: #DAD4BB;
+$highlight: #413D34;
+$darkBrown: #B3AC92;
+$accent: #CD664D;
+$accent2: #A0C490;
+$white: #ffffff;
 
 .bg-tan {
     background-color: $tan;
@@ -29,26 +30,34 @@ $accent2: #a0c490;
     background-color: $accent2;
 }
 
-.color-tan {
+.bg-white {
+    background-color: $white;
+}
+
+.text-tan {
     color: $tan;
 }
 
-.color-brown {
+.text-brown {
     color: $brown;
 }
 
-.color-highlight {
+.text-highlight {
     color: $highlight;
 }
 
-.color-darkBrown {
+.text-darkBrown {
     color: $darkBrown;
 }
 
-.color-accent {
+.text-accent {
     color: $accent;
 }
 
-.color-accent2 {
+.text-accent2 {
     color: $accent2;
+}
+
+.text-white {
+    color: $white;
 }
